@@ -30,6 +30,9 @@ class PredictHousePrices():
         return model
 
 
+    def calc_rmse(self, predictions):
+        return np.sqrt(((predictions - self.validate_data["SalePrice"]) ** 2).mean())
+
 
 if __name__ == "__main__":
     sol = PredictHousePrices()
@@ -42,7 +45,5 @@ if __name__ == "__main__":
 
         predictions = model.predict(sol.validate_data[col])
 
-        # Print out the statistics
-        model.summary()
-        print("Predictions for "+col+": ")
-        print(predictions.head())
+        print("RMSE for Predictions for "+col+": "+str(sol.calc_rmse(predictions)))
+
