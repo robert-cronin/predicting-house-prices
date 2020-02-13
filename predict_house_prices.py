@@ -6,14 +6,33 @@ import matplotlib.pyplot as plt
 
 class PredictHousePrices():
     def __init__(self):
-        self.train_data = pd.read_csv("data/train.csv")
+        missing_values = ["n/a", "na", "--", "nan"]
+        self.train_data = pd.read_csv("data/train.csv", na_values=missing_values)
+        print(self.train_data[self.train_data.isnull().any(axis=1)])
         self.learn_data = self.train_data[0:int(self.train_data.shape[0]*0.8)]
         self.validate_data = self.train_data[int(self.train_data.shape[0]*0.8):-1]
 
         self.test_data = pd.read_csv("data/test.csv")
 
-    # def data_prep(self):
-    #     self.test_data.dropna(inplace=True)
+    def data_prep(self):
+        # Remove duplicated rows
+        print("Shape before drop_duplicates: ", self.train_data.shape)
+        # self.train_data.drop_duplicates(subset="First Name", keep=False, inplace=True)
+        self.train_data.drop_duplicates(keep=False, inplace=True)
+        print("Shape before dropna: ", self.train_data.shape)
+        self.train_data.dropna(axis=1, thresh=50, inplace=True)
+        print("Shape after dropna: ", self.train_data.shape)
+
+        print("")
+        # Fill mean for float columns
+        for col in self.train_data.select_dtypes(include=['float64']):
+            mean = self.train_data[col].mean()
+            self.train_data[col] = self.train_data[col].fillna(mean)
+        # Fill mode for string and int columns
+        string_int_columns = self.train_data.applymap(lambda x: isinstance(x, str)).all(0)
+        for col in self.train_data[self.train_data.columns[string_int_columns]]:
+            mode = self.train_data[col].mode()
+            self.train_data[col] = self.train_data[col].fillna(mode)
 
     def numeric_column_correlations(self):
         correlations = {}
@@ -51,16 +70,17 @@ class PredictHousePrices():
 
 if __name__ == "__main__":
     sol = PredictHousePrices()
+    sol.data_prep()
     # Show correlation graph
-    sol.show_training_data_correlations()
-    print("Top 5 correlated numeric columns are: ")
-    corr_cols = sol.top_correlated_columns()
-    for col, corr in corr_cols.items():
-        print(col+": ", corr)
-    for col in corr_cols:
-        model = sol.build_linreg_model(col)
-
-        predictions = model.predict(sol.validate_data[col])
-
-        print("RMSE for Predictions for "+col+": "+str(sol.calc_rmse(predictions)))
+    # sol.show_training_data_correlations()
+    # print("Top 5 correlated numeric columns are: ")
+    # corr_cols = sol.top_correlated_columns()
+    # for col, corr in corr_cols.items():
+    #     print(col+": ", corr)
+    # for col in corr_cols:
+    #     model = sol.build_linreg_model(col)
+    #
+    #     predictions = model.predict(sol.validate_data[col])
+    #
+    #     print("RMSE for Predictions for "+col+": "+str(sol.calc_rmse(predictions)))
 
